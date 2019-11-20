@@ -1,0 +1,118 @@
+version: 2.1
+
+### References ###
+#-------------------------------------------------
+# Section defines system executors and associated
+# variables used in the configuration.
+#-------------------------------------------------
+references:
+  # Path to the base working directory.
+  # The path is a global variable usually implemented within
+  # the executors.
+  working_directory: &working_directory
+    ~/project
+
+  # Path to the base workspace directory.
+  # The path is the base for file persistence operations
+  # between operational steps.
+  workspace_root: &workspace_root
+    /tmp/workspace
+
+  # Structural alias that attaches a workspace into the executor.
+  # It is used as one of the steps within a job.
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: *workspace_root
+
+### Executors ###
+#-------------------------------------------------
+# Section defines system executors and associated
+# variables used in the configuration.
+#-------------------------------------------------
+executors:
+  php-base-executor:
+    docker:
+      - image: circleci/php:7.3.6-cli-stretch
+        user: root
+    working_directory: *working_directory
+
+  php-executor:
+    docker:
+      - image: circleci/php:7.3.6-cli-stretch
+        user: root
+        environment:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_USER: root
+          MYSQL_DB: lumen-dream-net
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_PASSWORD: secret
+      - image: circleci/redis:5.0.5-alpine
+      - image: circleci/postgres:11.4-alpine-postgis-ram
+        environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: lumen-dream-net
+    working_directory: *working_directory
+
+### Commands ###
+#-------------------------------------------------
+# Section defines reusable commands available
+# within the flow.
+#-------------------------------------------------
+
+### Jobs ###
+#-------------------------------------------------
+# Section defines individual jobs.
+#-------------------------------------------------
+jobs:
+  build:
+    executor: php-executor
+    steps:
+      - checkout
+
+      - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
+      - run: sudo docker-php-ext-install zip
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            # "composer.lock" can be used if it is committed to the repo
+            - v1-dependencies-{{ checksum "composer.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: composer install -n --prefer-dist
+
+      - save_cache:
+          key: v1-dependencies-{{ checksum "composer.json" }}
+          paths:
+            - ./vendor
+      - restore_cache:
+          keys:
+            - node-v1-{{ checksum "package.json" }}
+            - node-v1-
+      - run: yarn install
+      - save_cache:
+          key: node-v1-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+
+      # prepare the database
+      - run: touch storage/testing.sqlite
+      - run: php artisan migrate --env=testing --database=sqlite_testing --force
+
+      # run tests with phpunit or codecept
+      #- run: ./vendor/bin/phpunit
+      - run: ./vendor/bin/codecept build
+      - run: ./vendor/bin/codecept run
+
+      
+### Workflows ###
+#-------------------------------------------------
+# Section defines individual workflows.
+#-------------------------------------------------
+workflows:
+    version: 2.1
+
+    default:
+      jobs:
+        - build
