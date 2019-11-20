@@ -86,25 +86,53 @@ jobs:
           key: v1-dependencies-{{ checksum "composer.json" }}
           paths:
             - ./vendor
+
       - restore_cache:
           keys:
-            - node-v1-{{ checksum "package.json" }}
-            - node-v1-
-      - run: npm install
+            - composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer install -n --no-progress --no-suggest --prefer-dist --profile
+
       - save_cache:
-          key: node-v1-{{ checksum "package.json" }}
+          key: composer-v1-{{ checksum "composer.lock" }}
           paths:
-            - node_modules
+            - vendor
+
+      - run:
+          name: Wait for redis
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Wait for postgres
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       # prepare the database
-      - run: touch storage/testing.sqlite
-      - run: php artisan migrate --env=testing --database=sqlite_testing --force
+      - run:
+        name: Setup Environment
+        command: |
+          cp .env.example .env
+          sed -i 's/.*DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
+          sed -i 's/.*DB_DATABASE=.*/DB_DATABASE=lumen-dream-net/g' .env
+          sed -i 's/.*DB_USERNAME=.*/DB_USERNAME=root/g' .env
+          sed -i 's/.*DB_PASSWORD=.*/DB_PASSWORD=/g' .env
+
+      - run:
+          name: Run Database migration
+          command: php artisan migrate
+
+      - run:
+          name: Seed db
+          command: php artisan db:seed
+
 
       # run tests with phpunit or codecept
-      #- run: ./vendor/bin/phpunit
-      - run: ./vendor/bin/codecept build
-      - run: ./vendor/bin/codecept run
-
+      - run:
+            name: Project testing
+            command: |
+                ./cc-test-reporter before-build
+                composer unit
+                cp tests/_reports/coverage/clover.xml .
+                ./cc-test-reporter after-build --coverage-input-type clover --exit-code $?
       
 ### Workflows ###
 #-------------------------------------------------
