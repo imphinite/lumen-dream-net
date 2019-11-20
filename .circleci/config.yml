@@ -58,6 +58,22 @@ executors:
 # Section defines reusable commands available
 # within the flow.
 #-------------------------------------------------
+commands:
+  php-exec-libs-install:
+    description: "Install additional php executor libs. !To be moved to dedicated docker build!"
+    steps:
+      - run:
+          name: Update apt-get
+          command: sudo apt-get update
+
+      - run:
+          name: Add required php libs
+          command: |
+            sudo apt-get install libpq-dev
+            sudo docker-php-ext-install pdo_pgsql && sudo docker-php-ext-enable pdo_pgsql
+            sudo docker-php-ext-install postgresql-client && sudo docker-php-ext-enable postgresql-client
+            printf "yes\n" | sudo pecl install -f redis
+            sudo docker-php-ext-enable redis
 
 ### Jobs ###
 #-------------------------------------------------
@@ -68,6 +84,8 @@ jobs:
     executor: php-executor
     steps:
       - checkout
+
+      - php-exec-libs-install
 
       - run: sudo apt update
       
