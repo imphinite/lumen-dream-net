@@ -69,6 +69,10 @@ commands:
       - run:
           name: Add required php libs
           command: |
+            sudo pecl channel-update pecl.php.net
+            sudo pecl install -f igbinary
+            sudo docker-php-ext-enable igbinary
+            sudo docker-php-ext-install bcmath
             sudo apt-get install libpq-dev
             sudo docker-php-ext-install pdo_pgsql && sudo docker-php-ext-enable pdo_pgsql
             sudo docker-php-ext-install postgresql-client && sudo docker-php-ext-enable postgresql-client
