@@ -58,18 +58,41 @@ executors:
 # Section defines reusable commands available
 # within the flow.
 #-------------------------------------------------
+commands:
+  php-exec-libs-install:
+    description: "Install additional php executor libs. !To be moved to dedicated docker build!"
+    steps:
+      - run:
+          name: Update apt-get
+          command: sudo apt-get update
+
+      - run:
+          name: Add required php libs
+          command: |
+            sudo pecl channel-update pecl.php.net
+            sudo pecl install -f igbinary
+            sudo docker-php-ext-enable igbinary
+            sudo docker-php-ext-install bcmath
+            sudo apt-get install libpq-dev
+            sudo docker-php-ext-install pdo_pgsql && sudo docker-php-ext-enable pdo_pgsql
+            sudo docker-php-ext-install postgresql-client && sudo docker-php-ext-enable postgresql-client
+            printf "yes\n" | sudo pecl install -f redis
+            sudo docker-php-ext-enable redis
 
 ### Jobs ###
 #-------------------------------------------------
 # Section defines individual jobs.
 #-------------------------------------------------
 jobs:
-  build:
+  base:
     executor: php-executor
     steps:
       - checkout
 
-      - run: sudo apt update # PHP CircleCI 2.0 Configuration File# PHP CircleCI 2.0 Configuration File sudo apt install zlib1g-dev libsqlite3-dev
+      - php-exec-libs-install
+
+      - run: sudo apt update
+      
       - run: sudo docker-php-ext-install zip
 
       # Download and cache dependencies
@@ -86,25 +109,57 @@ jobs:
           key: v1-dependencies-{{ checksum "composer.json" }}
           paths:
             - ./vendor
+
       - restore_cache:
           keys:
-            - node-v1-{{ checksum "package.json" }}
-            - node-v1-
-      - run: yarn install
+            - composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer install -n --no-progress --no-suggest --prefer-dist --profile
+
       - save_cache:
-          key: node-v1-{{ checksum "package.json" }}
+          key: composer-v1-{{ checksum "composer.lock" }}
           paths:
-            - node_modules
+            - vendor
+
+      - run:
+          name: Wait for redis
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Wait for postgres
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       # prepare the database
-      - run: touch storage/testing.sqlite
-      - run: php artisan migrate --env=testing --database=sqlite_testing --force
+      - run:
+          name: Setup Environment
+          command: |
+            cp .env.example .env
+            sed -i 's/.*DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
+            sed -i 's/.*DB_DATABASE=.*/DB_DATABASE=lumen-dream-net/g' .env
+            sed -i 's/.*DB_USERNAME=.*/DB_USERNAME=root/g' .env
+            sed -i 's/.*DB_PASSWORD=.*/DB_PASSWORD=/g' .env
 
-      # run tests with phpunit or codecept
-      #- run: ./vendor/bin/phpunit
-      - run: ./vendor/bin/codecept build
-      - run: ./vendor/bin/codecept run
+      - run:
+          name: Run Database migration
+          command: php artisan migrate
 
+      - run:
+          name: Seed db
+          command: php artisan db:seed
+
+      # - run:
+      #     name: Setup Code Climate test-reporter
+      #     command: |
+      #       curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      #       chmod +x ./cc-test-reporter
+
+      - run:
+          name: Unit tests
+          command: |
+            # ./cc-test-reporter before-build
+            composer unit
+            # cp tests/_reports/coverage/clover.xml .
+            # ./cc-test-reporter after-build --coverage-input-type clover --exit-code $?
       
 ### Workflows ###
 #-------------------------------------------------
@@ -115,4 +170,4 @@ workflows:
 
     default:
       jobs:
-        - build
+        - base
