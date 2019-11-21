@@ -148,6 +148,12 @@ jobs:
           command: php artisan db:seed
 
       - run:
+          name: Setup Code Climate test-reporter
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+
+      - run:
           name: Project testing
           command: |
             ./cc-test-reporter before-build
