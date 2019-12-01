@@ -42,10 +42,9 @@ executors:
         user: root
       - image: circleci/mysql:8.0.4
         environment:
-          MYSQL_HOST: 127.0.0.1
-          MYSQL_USER: root
-          MYSQL_DB: lumen-dream-net
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_DATABASE: lumen-dream-net
+          MYSQL_USER: circleci
           MYSQL_PASSWORD: secret
       - image: circleci/redis:5.0.5-alpine
     working_directory: *working_directory
@@ -87,7 +86,7 @@ jobs:
       - php-exec-libs-install
 
       - run: sudo apt update
-      
+
       - run: sudo docker-php-ext-install zip
 
       # Download and cache dependencies
@@ -138,7 +137,7 @@ jobs:
             cp .env.example .env
             sed -i 's/.*DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
             sed -i 's/.*DB_DATABASE=.*/DB_DATABASE=lumen-dream-net/g' .env
-            sed -i 's/.*DB_USERNAME=.*/DB_USERNAME=root/g' .env
+            sed -i 's/.*DB_USERNAME=.*/DB_USERNAME=circleci/g' .env
             sed -i 's/.*DB_PASSWORD=.*/DB_PASSWORD=secret/g' .env
 
       - run:
@@ -156,7 +155,7 @@ jobs:
             composer unit
             cp tests/_reports/coverage/clover.xml .
             ./cc-test-reporter after-build --coverage-input-type clover --exit-code $?
-      
+
 ### Workflows ###
 #-------------------------------------------------
 # Section defines individual workflows.
