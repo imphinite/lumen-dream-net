@@ -34,7 +34,7 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "unit": [
-            "vendor/bin/phpunit -d memory_limit=512M --colors=always"
+            "phpunit -d memory_limit=512M --colors=always"
         ],
         "serve": [
             "php -S localhost:8000 -t public"
