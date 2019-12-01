@@ -47,10 +47,6 @@ executors:
           MYSQL_ALLOW_EMPTY_PASSWORD: true
           MYSQL_PASSWORD: secret
       - image: circleci/redis:5.0.5-alpine
-      - image: circleci/postgres:11.4-alpine-postgis-ram
-        environment:
-          POSTGRES_USER: root
-          POSTGRES_DB: lumen-dream-net
     working_directory: *working_directory
 
 ### Commands ###
@@ -73,9 +69,7 @@ commands:
             sudo pecl install -f igbinary
             sudo docker-php-ext-enable igbinary
             sudo docker-php-ext-install bcmath
-            sudo apt-get install libpq-dev
-            sudo docker-php-ext-install pdo_pgsql && sudo docker-php-ext-enable pdo_pgsql
-            sudo docker-php-ext-install postgresql-client && sudo docker-php-ext-enable postgresql-client
+            sudo apt-get install default-mysql-client
             printf "yes\n" | sudo pecl install -f redis
             sudo docker-php-ext-enable redis
 
@@ -126,8 +120,15 @@ jobs:
           command: dockerize -wait tcp://localhost:6379 -timeout 1m
 
       - run:
-          name: Wait for postgres
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+          name: Wait for MySQL
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for MySQL && exit 1
 
       # prepare the database
       - run:
@@ -137,7 +138,7 @@ jobs:
             sed -i 's/.*DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
             sed -i 's/.*DB_DATABASE=.*/DB_DATABASE=lumen-dream-net/g' .env
             sed -i 's/.*DB_USERNAME=.*/DB_USERNAME=root/g' .env
-            sed -i 's/.*DB_PASSWORD=.*/DB_PASSWORD=/g' .env
+            sed -i 's/.*DB_PASSWORD=.*/DB_PASSWORD=secret/g' .env
 
       - run:
           name: Run Database migration
