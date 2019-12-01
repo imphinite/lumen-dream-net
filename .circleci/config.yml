@@ -40,6 +40,7 @@ executors:
     docker:
       - image: circleci/php:7.3.6-cli-stretch
         user: root
+      - image: circleci/mysql:8.0.4
         environment:
           MYSQL_HOST: 127.0.0.1
           MYSQL_USER: root
