@@ -6,11 +6,11 @@
     "type": "project",
     "require": {
         "php": "^7.2",
+        "fzaninotto/faker": "^1.9",
         "illuminate/redis": "^6.5",
         "laravel/lumen-framework": "^6.0"
     },
     "require-dev": {
-        "fzaninotto/faker": "^1.4",
         "laravel/dusk": "^5.6",
         "mockery/mockery": "^1.0",
         "phpunit/phpunit": "^8.0"
@@ -34,13 +34,17 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "unit": [
-            "vendor/bin/phpunit -d memory_limit=512M --colors=always"
+            "phpunit -d memory_limit=512M --colors=always"
+        ],
+        "serve": [
+            "php -S localhost:8000 -t public"
         ]
     },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "process-timeout": 0
     },
     "minimum-stability": "dev",
     "prefer-stable": true
