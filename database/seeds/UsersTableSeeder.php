@@ -8,11 +8,14 @@ class UsersTableSeeder extends Seeder
 {
     public function run()
     {
+        $faker = Faker::create();
+
         DB::table('users')->insert(
             [
                 'id' => 1,
-                'name' => 'admin', 
-                'email' => 'admin@dreamnet.com',
+                'name' => $faker->username,
+                'email' => $faker->username + '@dreamnet.com',
+
                 'password' => 'secret'
             ]
         );
@@ -26,9 +29,9 @@ class UsersTableSeeder extends Seeder
 
     /**
      * Generate fake posts.
-     * 
+     *
      * @param int $maxPosts
-     * 
+     *
      * @return array $posts
      */
     private function fakePosts(int $maxPosts)
