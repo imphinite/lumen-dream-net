@@ -8,23 +8,33 @@ class UsersTableSeeder extends Seeder
 {
     public function run()
     {
+        $users = $this->fakeUsers(200);
+        DB::table('users')->insert($users);
+
+        $posts = $this->fakePosts(5000);
+        DB::table('posts')->insert($posts);
+    }
+
+    private function fakeUsers(int $maxUsers)
+    {
         $faker = Faker::create();
 
-        DB::table('users')->insert(
-            [
-                'id' => 1,
-                'name' => $faker->username,
-                'email' => $faker->username + '@dreamnet.com',
+        $users = [];
 
+        for ($i = 0; $i < $maxUsers; $i += 1)
+        {
+            $username = $faker->username;
+            $user = [
+                'id' => $i + 1,
+                'name' => $username,
+                'email' => $username . '@dreamnet.com',
                 'password' => 'secret'
-            ]
-        );
+            ];
 
-        $maxPosts = 5;
+            array_push($users, $user);
+        }
 
-        $posts = $this->fakePosts($maxPosts);
-
-        DB::table('posts')->insert($posts);
+        return $users;
     }
 
     /**
@@ -36,6 +46,8 @@ class UsersTableSeeder extends Seeder
      */
     private function fakePosts(int $maxPosts)
     {
+        $fakeUserCount = DB::table('users')->count();
+
         $faker = Faker::create();
 
         $posts = [];
@@ -44,7 +56,7 @@ class UsersTableSeeder extends Seeder
         {
             $post = [
                 'content' => $faker->realText($maxNbChars = 200, $indexSize = 2),
-                'user_id' => 1
+                'user_id' => rand(1, $fakeUserCount - 1)
             ];
 
             array_push($posts, $post);
