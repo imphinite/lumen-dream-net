@@ -17,9 +17,10 @@ class CreatePostsTable extends Migration
             $table->bigIncrements('id');
             $table->string('content');
             $table->bigInteger('user_id')->unsigned();
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent();
         });
-        
+
         Schema::table(
             'posts', function ($table) {
                 $table
