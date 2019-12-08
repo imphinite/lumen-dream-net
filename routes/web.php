@@ -17,4 +17,4 @@ $router->get('/', function () use ($router) {
 
 $router->post('/user', 'UserController@store');
 
-$router->get('/users/{id}/posts', 'PostController@get');
+$router->get('/posts', 'PostController@get');

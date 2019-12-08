@@ -1,7 +1,8 @@
 <?php
-namespace App\Transformer;
+namespace App\Transformers;
 
 use App\Models\Post;
+use Carbon\Carbon;
 use League\Fractal;
 
 class PostTransformer extends Fractal\TransformerAbstract
@@ -15,12 +16,21 @@ class PostTransformer extends Fractal\TransformerAbstract
         'author'
     ];
 
+    /**
+    * List of resources to automatically include
+    *
+    * @var array
+    */
+    protected $defaultIncludes = [
+        'author'
+    ];
+
 	public function transform(Post $post)
 	{
 	    return [
 	        'id'      => (int) $post->id,
 	        'content' => $post->content,
-	        'date'    => (int) $book->created_at
+	        'date'    => (new Carbon($post->created_at))->diffForHumans()
 	    ];
     }
 

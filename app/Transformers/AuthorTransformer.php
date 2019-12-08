@@ -1,7 +1,7 @@
 <?php
-namespace App\Transformer;
+namespace App\Transformers;
 
-use App\Model\User;
+use App\Models\User;
 use League\Fractal;
 
 class AuthorTransformer extends Fractal\TransformerAbstract
