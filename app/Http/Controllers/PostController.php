@@ -28,9 +28,9 @@ class PostController extends Controller
         $limit = $request->limit ? $request->limit : 10;
 
         if ($currentCursor) {
-            $posts = Post::where('id', '>', $currentCursor)->take($limit)->get();
+            $posts = Post::where('id', '>', $currentCursor)->take($limit)->latest()->get();
         } else {
-            $posts = Post::take($limit)->get();
+            $posts = Post::take($limit)->latest()->get();
         }
 
         $newCursor = $posts->last()->id;
@@ -40,5 +40,21 @@ class PostController extends Controller
         $resource->setCursor($cursor);
 
         return $this->fractal->createData($resource)->toJson();
+    }
+
+    /**
+     *
+     */
+    public function store(Request $request)
+    {
+        $content = $request->content;
+
+        $post = new Post;
+
+        $post->content = $content;
+
+        $post->save();
+
+        return response(null, 204);
     }
 }

@@ -43,6 +43,10 @@ class PostTransformer extends Fractal\TransformerAbstract
     {
         $author = $post->user;
 
+        if (!$author) {
+            $author = new \App\Models\User;
+        }
+
         return $this->item($author, new AuthorTransformer);
     }
 }

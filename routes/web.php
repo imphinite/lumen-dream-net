@@ -18,3 +18,4 @@ $router->get('/', function () use ($router) {
 $router->post('/user', 'UserController@store');
 
 $router->get('/posts', 'PostController@get');
+$router->post('/posts', 'PostController@store');
